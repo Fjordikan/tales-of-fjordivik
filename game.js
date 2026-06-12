@@ -200,8 +200,8 @@ function initializeGame() {
             height: 15,
             tiles: createInteriorMap('council'),
             npcs: [],
-            exitX: 10,
-            exitY: 15
+            exitX: 0,
+            exitY: 10
         },
         library: {
             width: 20,
@@ -344,7 +344,8 @@ function movePlayer(dx, dy) {
                     player.x = newX;
                     player.y = newY;
                     
-                    if (newX <= 1 && newY >= interior.exitY - 1 && newY <= interior.exitY + 1) {
+                    // Check if player is at the exit (left side of building)
+                    if (newX <= 1) {
                         exitBuilding();
                     }
                 }
@@ -498,7 +499,7 @@ function isWalkable(x, y, map) {
     const tile = map[Math.floor(y)][Math.floor(x)];
     const walkableTiles = [TILES.GRASS, TILES.STONE, TILES.ROAD, TILES.BRIDGE];
     
-    // Allow walking on building tiles AND the walkable terrain
+    // Allow walking on regular terrain
     let isWalkableTerrainTile = walkableTiles.includes(tile);
     
     // Check if this position is on a building (buildings are walkable to enter them)
