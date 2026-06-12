@@ -1,4 +1,4 @@
-// The Tales of Fjordivik - Complete Game Engine
+// The Tales of Fjordivik - Complete Game Engine (FIXED)
 
 const TILE_SIZE = 32;
 const MAP_WIDTH = 25;
@@ -57,7 +57,7 @@ const TILES = {
     ROAD: 9
 };
 
-let worldMap = createWorldMap();
+let worldMap;
 
 const NPCs = {
     benedict: {
@@ -181,49 +181,65 @@ const buildings = {
     }
 };
 
-const interiors = {
-    forge: {
-        width: 20,
-        height: 15,
-        tiles: createInteriorMap('forge'),
-        npcs: ['benedict'],
-        exitX: 0,
-        exitY: 10
-    },
-    council: {
-        width: 20,
-        height: 15,
-        tiles: createInteriorMap('council'),
-        npcs: [],
-        exitX: 10,
-        exitY: 15
-    },
-    library: {
-        width: 20,
-        height: 15,
-        tiles: createInteriorMap('library'),
-        npcs: [],
-        exitX: 0,
-        exitY: 5
-    },
-    stable: {
-        width: 20,
-        height: 15,
-        tiles: createInteriorMap('stable'),
-        npcs: [],
-        exitX: 0,
-        exitY: 5
-    }
-};
+let interiors = {};
+
+// Create interior maps first
+function initializeGame() {
+    worldMap = createWorldMap();
+    interiors = {
+        forge: {
+            width: 20,
+            height: 15,
+            tiles: createInteriorMap('forge'),
+            npcs: ['benedict'],
+            exitX: 0,
+            exitY: 10
+        },
+        council: {
+            width: 20,
+            height: 15,
+            tiles: createInteriorMap('council'),
+            npcs: [],
+            exitX: 10,
+            exitY: 15
+        },
+        library: {
+            width: 20,
+            height: 15,
+            tiles: createInteriorMap('library'),
+            npcs: [],
+            exitX: 0,
+            exitY: 5
+        },
+        stable: {
+            width: 20,
+            height: 15,
+            tiles: createInteriorMap('stable'),
+            npcs: [],
+            exitX: 0,
+            exitY: 5
+        }
+    };
+}
 
 window.onload = function() {
+    console.log('Page loaded - initializing game');
+    
     canvas = document.getElementById('gameCanvas');
     ctx = canvas.getContext('2d');
     minimapCanvas = document.getElementById('minimap');
     minimapCtx = minimapCanvas.getContext('2d');
     
+    if (!canvas || !ctx) {
+        console.error('Canvas not found!');
+        return;
+    }
+    
+    initializeGame();
     setupEventListeners();
     renderStartMenu();
+    
+    console.log('Game initialized successfully');
 };
 
 function setupEventListeners() {
@@ -551,9 +567,11 @@ function createInteriorMap(buildingType) {
 }
 
 function startGame() {
+    console.log('Start Game clicked');
     document.getElementById('startMenu').classList.add('menu-hidden');
     gameState = 'playing';
     gameRunning = true;
+    console.log('Game state changed to playing');
     gameLoop();
 }
 
@@ -573,9 +591,13 @@ function updateLocationName(name) {
 }
 
 function updateUI() {
-    document.getElementById('healthStat').textContent = Math.floor(player.health);
-    document.getElementById('exhaustionStat').textContent = Math.floor(player.exhaustion);
-    document.getElementById('itemCount').textContent = player.inventory.length;
+    const healthStat = document.getElementById('healthStat');
+    const exhaustionStat = document.getElementById('exhaustionStat');
+    const itemCount = document.getElementById('itemCount');
+    
+    if (healthStat) healthStat.textContent = Math.floor(player.health);
+    if (exhaustionStat) exhaustionStat.textContent = Math.floor(player.exhaustion);
+    if (itemCount) itemCount.textContent = player.inventory.length;
 }
 
 function gameLoop() {
@@ -756,5 +778,174 @@ function drawTile(x, y, tileType) {
             break;
         case TILES.ROAD:
             ctx.fillStyle = '#a89968';
-            ctx.fillRect(x, y, TILE_SIZE*
-
+            ctx.fillRect(x, y, TILE_SIZE, TILE_SIZE);
+            ctx.fillStyle = '#8b7f6b';
+            ctx.fillRect(x + 10, y, 12, TILE_SIZE);
+            break;
+        case TILES.WALL:
+            ctx.fillStyle = '#6b4423';
+            ctx.fillRect(x, y, TILE_SIZE, TILE_SIZE);
+            ctx.strokeStyle = '#4b2c13';
+            ctx.lineWidth = 2;
+            ctx.strokeRect(x, y, TILE_SIZE, TILE_SIZE);
+            break;
+    }
+}
+
+function drawBuilding(x, y, buildingKey, bx, by) {
+    ctx.fillStyle = '#6b4423';
+    ctx.fillRect(x, y, TILE_SIZE, TILE_SIZE);
+    
+    ctx.fillStyle = '#8b5a3c';
+    if ((bx + by) % 2 === 0) {
+        ctx.fillRect(x + 2, y + 2, TILE_SIZE - 4, 8);
+        ctx.fillRect(x + 2, y + 16, TILE_SIZE - 4, 8);
+    }
+    
+    if (bx === 0 && by === 0) {
+        ctx.fillStyle = '#2b1810';
+        ctx.fillRect(x + 10, y + 10, 12, 14);
+        ctx.fillStyle = '#4a90e2';
+        ctx.fillRect(x + 12, y + 12, 4, 4);
+        ctx.fillRect(x + 18, y + 12, 4, 4);
+    }
+}
+
+function drawPlayer(x, y) {
+    ctx.fillStyle = '#cc5500';
+    ctx.fillRect(x + 10, y + 10, 12, 12);
+    
+    ctx.fillStyle = '#d4a574';
+    ctx.fillRect(x + 12, y + 4, 8, 8);
+    
+    ctx.fillStyle = '#000000';
+    ctx.fillRect(x + 14, y + 5, 2, 2);
+    ctx.fillRect(x + 18, y + 5, 2, 2);
+    
+    ctx.fillStyle = '#c0c0c0';
+    ctx.fillRect(x + 24, y + 12, 4, 10);
+    ctx.fillStyle = '#ffd700';
+    ctx.fillRect(x + 22, y + 12, 2, 2);
+}
+
+function drawNPC(x, y, npc) {
+    let bodyColor = '#cc5500';
+    let headColor = '#d4a574';
+    
+    switch(npc.id) {
+        case 'benedict':
+            bodyColor = '#003366';
+            break;
+        case 'tove':
+            bodyColor = '#8b006b';
+            break;
+        case 'operan':
+            bodyColor = '#2b5c2b';
+            break;
+        case 'viggo':
+            bodyColor = '#8b7355';
+            break;
+    }
+    
+    ctx.fillStyle = bodyColor;
+    ctx.fillRect(x + 10, y + 10, 12, 12);
+    
+    ctx.fillStyle = headColor;
+    ctx.beginPath();
+    ctx.arc(x + 16, y + 6, 4, 0, Math.PI * 2);
+    ctx.fill();
+    
+    ctx.fillStyle = '#000000';
+    ctx.fillRect(x + 14, y + 5, 1.5, 1.5);
+    ctx.fillRect(x + 17.5, y + 5, 1.5, 1.5);
+    
+    ctx.fillStyle = '#00ff00';
+    ctx.font = 'bold 10px Arial';
+    ctx.textAlign = 'center';
+    ctx.fillText(npc.name, x + 16, y - 5);
+}
+
+function drawVaka(x, y) {
+    ctx.fillStyle = '#f5f5f5';
+    ctx.fillRect(x + 6, y + 12, 20, 10);
+    
+    ctx.fillStyle = '#ffffff';
+    ctx.fillRect(x + 10, y + 8, 4, 4);
+    
+    ctx.fillStyle = '#f5f5f5';
+    ctx.fillRect(x + 8, y + 4, 6, 4);
+    
+    ctx.fillStyle = '#000000';
+    ctx.fillRect(x + 11, y + 5, 1, 1);
+    
+    ctx.fillStyle = '#f0f0f0';
+    ctx.fillRect(x + 8, y + 22, 2, 6);
+    ctx.fillRect(x + 14, y + 22, 2, 6);
+    ctx.fillRect(x + 20, y + 22, 2, 6);
+    ctx.fillRect(x + 26, y + 22, 2, 6);
+}
+
+function drawExitHint() {
+    ctx.fillStyle = 'rgba(0, 255, 0, 0.7)';
+    ctx.fillRect(10, 10, 200, 30);
+    ctx.fillStyle = '#00ff00';
+    ctx.font = 'bold 12px Arial';
+    ctx.textAlign = 'left';
+    ctx.fillText('Press E to exit', 15, 30);
+}
+
+function renderMinimap() {
+    minimapCtx.fillStyle = '#16213e';
+    minimapCtx.fillRect(0, 0, minimapCanvas.width, minimapCanvas.height);
+    minimapCtx.strokeStyle = '#00d4ff';
+    minimapCtx.lineWidth = 1;
+    minimapCtx.strokeRect(0, 0, minimapCanvas.width, minimapCanvas.height);
+    
+    if (currentLocation === 'townSquare') {
+        const scaleX = minimapCanvas.width / MAP_WIDTH;
+        const scaleY = minimapCanvas.height / MAP_HEIGHT;
+        
+        for (let y = 0; y < MAP_HEIGHT; y++) {
+            for (let x = 0; x < MAP_WIDTH; x++) {
+                const tile = worldMap[y][x];
+                let color = '#0f3460';
+                
+                if (tile === TILES.GRASS) color = '#2d5016';
+                if (tile === TILES.WATER) color = '#0a3d66';
+                if (tile === TILES.ROAD) color = '#a89968';
+                if (tile === TILES.FOREST) color = '#1a3d1a';
+                if (tile === TILES.MOUNTAIN) color = '#6b6b6b';
+                
+                minimapCtx.fillStyle = color;
+                minimapCtx.fillRect(x * scaleX, y * scaleY, scaleX, scaleY);
+            }
+        }
+        
+        minimapCtx.fillStyle = '#8b5a3c';
+        for (let buildingKey in buildings) {
+            const building = buildings[buildingKey];
+            minimapCtx.fillRect(
+                building.x * scaleX,
+                building.y * scaleY,
+                building.width * scaleX,
+                building.height * scaleY
+            );
+        }
+        
+        minimapCtx.fillStyle = '#ffff00';
+        minimapCtx.fillRect(player.x * scaleX - 2, player.y * scaleY - 2, 4, 4);
+    }
+}
+
+function renderStartMenu() {
+    // Menu is rendered via HTML
+}
+
+function endGame(victory) {
+    if (victory) {
+        alert('You have completed the first chapter of The Tales of Fjordivik!');
+    } else {
+        alert('Your adventure has come to an end. Game Over.');
+    }
+    location.reload();
+}
