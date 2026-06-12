@@ -497,18 +497,22 @@ function isWalkable(x, y, map) {
     
     const tile = map[Math.floor(y)][Math.floor(x)];
     const walkableTiles = [TILES.GRASS, TILES.STONE, TILES.ROAD, TILES.BRIDGE];
-    if (!walkableTiles.includes(tile)) return false;
     
+    // Allow walking on building tiles AND the walkable terrain
+    let isWalkableTerrainTile = walkableTiles.includes(tile);
+    
+    // Check if this position is on a building (buildings are walkable to enter them)
+    let isOnBuilding = false;
     for (let buildingKey in buildings) {
         const building = buildings[buildingKey];
-        if (currentLocation === 'townSquare' &&
-            x >= building.x && x < building.x + building.width &&
+        if (x >= building.x && x < building.x + building.width &&
             y >= building.y && y < building.y + building.height) {
-            return false;
+            isOnBuilding = true;
+            break;
         }
     }
     
-    return true;
+    return isWalkableTerrainTile || isOnBuilding;
 }
 
 function createWorldMap() {
